@@ -15,7 +15,7 @@
             background: linear-gradient(to bottom, #4B5563, #D1D5DB);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
-            touch-action: manipulation; /* Prevent default touch behaviors */
+            touch-action: manipulation;
         }
 
         #game {
@@ -136,8 +136,8 @@
         }
 
         #player.jump #player-body {
-            transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            bottom: 24vh;
+            transition: bottom 0.3s cubic-bezier(0.5, -0.5, 0.5, 1.5);
+            bottom: 22vh;
         }
 
         #player.jump #player-arm, #player.jump #player-leg {
@@ -386,10 +386,10 @@
         let gameRunning = false;
         let gamePaused = false;
         let obstacles = [];
-        let obstacleSpeed = 4;
+        let obstacleSpeed = 2.5; // Slow speed
         let isJumping = false;
         let spawnInterval;
-        let spawnDelay = 1800;
+        let spawnDelay = 2200; // Longer spawn delay
         let lastFrameTime = performance.now();
         let invincibility = false;
 
@@ -398,8 +398,8 @@
             isJumping = true;
             player.classList.add('jump');
 
-            // Particle effect
-            for (let i = 0; i < 6; i++) {
+            // Particle effect (optimized for minimal delay)
+            for (let i = 0; i < 4; i++) {
                 const particle = document.createElement('div');
                 particle.classList.add('particle');
                 particle.style.left = `${parseFloat(player.style.left) + 3}vw`;
@@ -419,15 +419,15 @@
                 oscillator.frequency.setValueAtTime(700, audioCtx.currentTime);
                 oscillator.type = 'sine';
                 gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
                 oscillator.start(audioCtx.currentTime);
-                oscillator.stop(audioCtx.currentTime + 0.25);
+                oscillator.stop(audioCtx.currentTime + 0.2);
             } catch (e) {}
 
             setTimeout(() => {
                 player.classList.remove('jump');
                 isJumping = false;
-            }, 400);
+            }, 300); // Fast jump duration
         }
 
         function createObstacle() {
@@ -441,7 +441,7 @@
 
         function updateSpawnRate() {
             clearInterval(spawnInterval);
-            spawnDelay = Math.max(900, 1800 - (score * 8));
+            spawnDelay = Math.max(900, 2200 - (score * 8));
             spawnInterval = setInterval(createObstacle, spawnDelay);
         }
 
@@ -471,19 +471,21 @@
                         localStorage.setItem('highScore', highScore);
                     }
                     if (score % 10 === 0) {
-                        obstacleSpeed += 0.2;
+                        obstacleSpeed += 0.1; // Slow speed increase
                         updateSpawnRate();
                     }
                     continue;
                 }
+
+                // Skip collision check if player is jumping
+                if (player.classList.contains('jump') || invincibility) continue;
 
                 const playerRect = player.getBoundingClientRect();
                 const obstacleRect = obstacle.getBoundingClientRect();
                 const jumpHeight = parseFloat(player.style.bottom) || 12;
 
                 if (
-                    !invincibility &&
-                    jumpHeight < 18 &&
+                    jumpHeight < 16 &&
                     playerRect.left < obstacleRect.right &&
                     playerRect.right > obstacleRect.left &&
                     playerRect.bottom > obstacleRect.top
@@ -512,8 +514,8 @@
             gameRunning = true;
             gamePaused = false;
             score = 0;
-            obstacleSpeed = 4;
-            spawnDelay = 1800;
+            obstacleSpeed = 2.5; // Slow speed
+            spawnDelay = 2200; // Longer spawn delay
             scoreElement.textContent = 'Score: 0';
             gameOverElement.style.display = 'none';
             gameOverElement.setAttribute('aria-hidden', 'true');
@@ -528,7 +530,7 @@
             player.classList.remove('jump');
             isJumping = false;
             invincibility = true;
-            setTimeout(() => invincibility = false, 2000); // 2s invincibility
+            setTimeout(() => invincibility = false, 2000);
             updateSpawnRate();
             lastFrameTime = performance.now();
             requestAnimationFrame(moveObstacles);
@@ -578,5 +580,4 @@
         jumpBtn.style.display = window.innerWidth <= 600 ? 'block' : 'none';
     </script>
 </body>
-
 </html>
